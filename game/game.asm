@@ -150,11 +150,12 @@ snooze: sleep
     rjmp snooze
 
 btnpush: cli; handler for the button interrupt
-    ldi xzero,0b00010010
-    ldi xone,0b00000001
-    ldi ozero,0b10000101
-    ldi oone,0b00000000
+    sbic PINA,0
+    reti
+
+    in ozero,PINA
+    andi ozero,(1<<PINA2)|(1<<PINA3)|(1<<PINA7); mask for the inputs we want
     rcall write
-    rcall delay
+
     sei; re-enable interrupts
     reti
