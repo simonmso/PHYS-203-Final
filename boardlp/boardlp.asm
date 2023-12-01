@@ -37,19 +37,15 @@
     rjmp main
 
 clear: ldi output,0; clear the board, does NOT clear the state
-    rcall send
+    out PORTB,output
     eor output,clrHigh
-    rcall send
-    ret
-
-send: out PORTB,output; send whatever output is to PORTB
-    nop
+    out PORTB,output
     ret
 
 tick: or output,clkHigh; ticks the shift register clock
-    rcall send
+    out PORTB,output
     eor output,clkHigh
-    rcall send
+    out PORTB,output
     ret
 
 lShift: ldi i,PINB1; shifts the working register by PINB1
@@ -80,7 +76,7 @@ write: rcall clear; --- writes the current board ---
         andi output,~(1<<PINB1); clear the data bit
         eor output,working;
 
-        rcall send; send it
+        out PORTB,output; send it
         rcall tick
 
         lsr copy; shift copy so the next bit is in the first position
