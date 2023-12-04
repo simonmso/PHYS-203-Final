@@ -1,0 +1,49 @@
+.row {
+    display: flex;
+    gap: 0rem;
+}
+.container {
+    flex-direction: column;
+    display: flex;
+    gap: 0rem;
+    align-items: center;
+    justify-content: center;
+}
+.row:first-child {
+    border-bottom: black solid 1px;
+}
+.row:nth-child(3) {
+    border-top: black solid 1px;
+}
+.data:first-child {
+    border-right: black solid 1px;
+}
+.data:last-child {
+    border-left: black solid 1px;
+}
+.data {
+    padding: 2rem 1rem;
+}
+.o {
+    background-color: #ffd5d1;
+}
+.o:hover, .o[selected="1"] {
+    background-color: red;
+}
+.x {
+    background-color: #deffd1;
+}
+.x:hover, .x[selected="1"] {
+    background-color: rgb(40, 211, 40);
+}
+.x, .o {
+    border: none;
+    border-radius: 2px;
+    padding: 1rem;
+}
+button {
+    cursor: pointer;
+}
+#sequence {
+    font-family: monospace;
+}

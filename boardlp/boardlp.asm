@@ -19,6 +19,7 @@
     .def working     = r21
     .def i           = r22         ; used for counting
     .def n           = r23         ; used for counting
+    .def j           = r24
 
     .def clkHigh     = r1       ; masks for setting things
     .def dataHigh    = r2
@@ -85,13 +86,129 @@ write: rcall clear; --- writes the current board ---
         brne rwrite; then do the whole thing over again
         ret
 
-main: ldi xzero,0b00010010
-    ldi xone,0b00000001
-    ldi ozero,0b10000101
-    ldi oone,0b00000000
-    ; msb x _ o
-    ;     o x x
-    ;     _ _ o lsb
-    rcall write
+delay: ldi i,255 ; delay for long enough to avoid button bounce
+    ldi j,200
+iloop: subi i,1
+    brne iloop
+    ldi i,255
+    subi j,1
+    brne iloop
+    ret
 
+circle: ldi xzero,0b00100000
+ldi xone,0b00000001
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00100100
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000110
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000011
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00001001
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01001000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b11000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b10000000
+ldi xone,0b00000001
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+explosion: ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00010000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b10111010
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11101111
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01000101
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+main:
+    ; rcall circle
+    rcall explosion
+    rjmp main
 

@@ -153,6 +153,9 @@ btnpush: cli; handler for the button interrupt
     sbic PINA,0
     reti
 
+    ; WORKING ON: rewire such that PA0 - PA3 are the inputs
+    ; move interupts to PCINT7 and PA3 (for the last wire)
+
     in ozero,PINA
     andi ozero,(1<<PINA2)|(1<<PINA3)|(1<<PINA7); mask for the inputs we want
     rcall write
