@@ -13,7 +13,7 @@
 	.cseg                         ; Not sure what this does
 	.org 	0x00
 
-    rjmp main ; External pin, power-on reset, brown-out reset, watchdog reset
+    rjmp setup ; External pin, power-on reset, brown-out reset, watchdog reset
     reti ; INT0 ; External interrupt request 0
     rjmp btnpush ; PCINT0 ; Pin change interrupt request 0
     rjmp btnpush ; PCINT1 ; Pin change interrupt request 1
@@ -42,6 +42,8 @@
 
     .def turn = r5
 
+    .def zero = r6; seems redundant, but is needed at some point
+
     .def working = r16
 
     .def i = r17
@@ -60,6 +62,10 @@ iloop: subi i,1
     ldi i,255
     subi n,1
     brne iloop
+    ret
+
+delayMed: rcall delay
+    rcall delay
     ret
 
 tick: or output,clkHigh; tick the shift register clock
@@ -122,12 +128,7 @@ write: rcall clear; --- writes the current board ---
         brne rwrite; then do the whole thing over again
         ret
 
-main:; RESET interupt points here
-    rcall setup; setup
-    snooze: sleep; then wait until a button is pushed
-        rjmp snooze
-
-setup:; setup code before main runs
+setup:; RESET interupt points here
     ldi	working,(1<<DDB1)|(1<<DDB0)|(1<<DDB2); Set port B0 B1 B2 to output
     out DDRB,working
     nop; noop for synchronization
@@ -139,12 +140,12 @@ setup:; setup code before main runs
     ldi working,(1<<PINB2)
     mov clrHigh,working; used to toggle the clr
 
-    ldi o0,0
+    ldi o0,0; clear state
     ldi o1,0
     ldi x0,0
     ldi x1,0
 
-    rcall clear
+    rcall clear; clear lights
 
     ; set green ready light ------------
     or output,dataHigh ; set data high
@@ -154,7 +155,14 @@ setup:; setup code before main runs
     out PORTB,output
 
     rcall enInterupts
-    ret
+    rcall main
+    reti
+
+main:
+    rcall checkForWin
+    rcall checkForTie
+    rjmp main
+    ret; unreachable return
 
 btnpush: cli; handler for the button interrupt; disable interrupts
     in copy,PINA; read the input
@@ -227,8 +235,176 @@ updateState:; updates the state to include whatever lastPush was
         eor o1,copy1
         rcall write
         rjmp flipTurn
+
     flipTurn:
         ldi working,1
         eor turn,working
     endUpdate: ret
         
+checkForWin:; brute forcing this
+    cli; disable interrupts
+
+    cpi x1,1
+    breq checkForX1
+    rjmp checkForX0
+
+    ; TODO: make this simpler
+
+    checkForX1:
+        ldi working,0b00010001
+        and working,x0
+        cpi working,0b00010001
+        breq xWon
+        ldi working,0b11000000
+        and working,x0
+        cpi working,0b11000000
+        breq xWon
+        ldi working,0b00100100
+        and working,x0
+        cpi working,0b00100100
+        breq xWon
+
+        rjmp checkO
+
+    checkForX0:
+        ldi working,0b10010010
+        and working,x0
+        cpi working,0b10010010
+        breq xWon
+        ldi working,0b01001001
+        and working,x0
+        cpi working,0b01001001
+        breq xWon
+        ldi working,0b01010100
+        and working,x0
+        cpi working,0b01010100
+        breq xWon
+        ldi working,0b00111000
+        and working,x0
+        cpi working,0b00111000
+        breq xWon
+        ldi working,0b00000111
+        and working,x0
+        cpi working,0b00000111
+        breq xWon
+
+    rjmp checkO
+
+    xWon:; infinite win loop
+    ldi o0,0
+    ldi o1,0
+    xLoop: ldi x0,255
+        ldi x1,1
+        rcall write
+        rcall delayMed
+        ldi x0,0
+        ldi x1,0
+        rcall write
+        rcall delayMed
+        rjmp xLoop
+
+    checkO:
+    cpi o1,1
+    breq checkForO1
+    rjmp checkForO0
+
+    checkForO1:
+        ldi working,0b00010001
+        and working,o0
+        cpi working,0b00010001
+        breq oWon
+        ldi working,0b11000000
+        and working,o0
+        cpi working,0b11000000
+        breq oWon
+        ldi working,0b00100100
+        and working,o0
+        cpi working,0b00100100
+        breq oWon
+
+        rjmp endCheck
+
+    checkForO0:
+        ldi working,0b10010010
+        and working,o0
+        cpi working,0b10010010
+        breq oWon
+        ldi working,0b01001001
+        and working,o0
+        cpi working,0b01001001
+        breq oWon
+        ldi working,0b01010100
+        and working,o0
+        cpi working,0b01010100
+        breq oWon
+        ldi working,0b00111000
+        and working,o0
+        cpi working,0b00111000
+        breq oWon
+        ldi working,0b00000111
+        and working,o0
+        cpi working,0b00000111
+        breq oWon
+    
+    rjmp endCheck
+
+    oWon:; infinite win loop
+        ldi x0,0
+        ldi x1,0
+        oLoop: ldi o0,255
+            ldi o1,1
+            rcall write
+            rcall delayMed
+            ldi o0,0
+            ldi o1,0
+            rcall write
+            rcall delayMed
+            rjmp oLoop
+
+    endCheck:
+        sei; re-enable interrupts
+        ret
+
+checkForTie:
+    cli; disable interrupts
+
+    ldi working,0
+    mov zero,working
+
+    ; count how many moves have happened
+    mov copy,x0
+    rcall count
+    mov copy,x1
+    rcall count
+    mov copy,o0
+    rcall count
+    mov copy,o1
+    rcall count
+
+    cpi working,9; if nine moves have happened
+    breq tie
+
+    sei; re-enable interrupts
+    ret
+    count:; count the 1's in copy
+        clc; cleary the carry flag
+        ror copy
+        adc working,zero
+        cp copy,zero
+        brne count
+        ret
+
+tie:; infinite tie loop
+    ldi o0,0
+    ldi o1,0
+    ldi x0,0
+    ldi x1,0
+    rcall write
+    rcall delayMed
+    ldi x0,255
+    ldi x1,1
+    ldi o0,255
+    ldi o1,1
+    rcall write
+    rcall delayMed
+    rjmp tie

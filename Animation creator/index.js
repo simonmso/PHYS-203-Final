@@ -21,11 +21,11 @@ for (let i = 0; i <= 8; i++) {
 const reduceState = () => {
     let ret = document.createElement('p');
     teams.forEach((t) => {
-        ret.append(`ldi ${t}zero,0b${state[t].reduce((r, b, i) => {
+        ret.append(`ldi ${t}0,0b${state[t].reduce((r, b, i) => {
             return i < 8 ? `${b}` + r : r;
         }, "")}`);
         ret.append(document.createElement('br'));
-        ret.append(`ldi ${t}one,0b0000000${state[t][8]}`);
+        ret.append(`ldi ${t}1,0b0000000${state[t][8]}`);
         ret.append(document.createElement('br'));
     })
     ret.append('rcall write');
