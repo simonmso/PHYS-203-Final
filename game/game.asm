@@ -2,11 +2,11 @@
 ; PINB0: shift reg. clock
 ; PINB1: shift reg. data
 ; PINB2: shift reg. clr
-; PCINT0: interupt for the first 8 buttons
-; PCINT1: interupt for the last button
-; PA2: Buttons A0
-; PA3: Buttons A1
-; PA7: Buttons A2
+; PA0/PCINT0: 9th button
+; PA1: Buttons A0
+; PA2: Buttons A1
+; PA3: Buttons A2
+; PCINT7: interupt for the first 8 buttons
 
 	.include "tn84def.inc"       ; pretty sure this is the right thing
 
@@ -38,6 +38,7 @@
     .def clrHigh     = r2
 
     .def copy = r3
+    .def copy1 = r4
 
     .def working = r16
 
@@ -48,6 +49,7 @@
     .def xone      = r20         ; x's 15-9
     .def ozero     = r21         ; o's 8-0
     .def oone      = r22         ; o's 15-9
+    .def lastPush  = r23         ; last button that was pushed
 
 delay: ldi i,255 ; delay for long enough to avoid button bounce
     ldi n,200
@@ -64,9 +66,9 @@ tick: or output,clkHigh; tick the shift register clock
     out PORTB,output
     ret
 
-enInterupts: ; enable interupts PCINT0 and PCINT1
+enInterupts: ; enable interupts PCINT0 and PCINT7
     ; These are used to signal that a button has been pushed
-    ldi working,0b00000011
+    ldi working,(1<<PINA0)|(1<<PINA7); enable PCINT0 and PCINT7
     out PCMSK0,working
     ldi working,(1<<PCIE0)
     out GIMSK,working
@@ -130,8 +132,32 @@ setup:; setup code before main runs
     ldi working,(1<<PINB2)
     mov clrHigh,working; used to toggle the clr
 
+    ldi ozero,0
+    ldi oone,0
+    ldi xzero,0
+    ldi xone,0
+
     rcall clear
     ret
+
+updateState:; updates the state to include whatever lastPush was
+    ldi working,1
+    mov copy,working
+    ldi working,0
+    mov copy1,working
+    mov working,lastPush
+
+    shftLoop: cpi working,0
+        breq setLight
+        rol copy
+        rol copy1
+        subi working,1
+        rjmp shftLoop
+    setLight:
+        eor ozero,copy
+        eor oone,copy1
+        rcall write
+        ret
 
 main:; the main program
     rcall setup
@@ -149,16 +175,28 @@ main:; the main program
 snooze: sleep
     rjmp snooze
 
-btnpush: cli; handler for the button interrupt
-    sbic PINA,0
-    reti
+btnpush: cli; handler for the button interrupt; disable interrupts
+    in copy,PINA; read the input
+    
+    mov working,copy
+    andi working,(1<<PINA0)|(1<<PINA7); isolate the interrupt pins
+    cpi working,(0<<PINA0)|(1<<PINA7)
+    breq btnFinally; immediately return if no button is pushed. Prevents btnpush from firing when we release a button
+    ; mov ozero,working
 
-    ; WORKING ON: rewire such that PA0 - PA3 are the inputs
-    ; move interupts to PCINT7 and PA3 (for the last wire)
+    mov lastPush,copy
+    andi lastPush,(1<<PINA1)|(1<<PINA2)|(1<<PINA3); mask for the inputs we want
+    lsr lastPush
+    inc lastPush
+    eor lastPush,working
 
-    in ozero,PINA
-    andi ozero,(1<<PINA2)|(1<<PINA3)|(1<<PINA7); mask for the inputs we want
-    rcall write
+    ; special case for when button 0 is pressed
+    sbrc copy,PINA0
+    ldi lastPush,0
 
-    sei; re-enable interrupts
-    reti
+    rcall updateState
+
+    rcall delay
+    
+    btnFinally: sei; re-enable interrupts
+        reti

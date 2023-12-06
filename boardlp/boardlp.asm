@@ -87,7 +87,7 @@ write: rcall clear; --- writes the current board ---
         ret
 
 delay: ldi i,255 ; delay for long enough to avoid button bounce
-    ldi j,200
+    ldi j,100
 iloop: subi i,1
     brne iloop
     ldi i,255
@@ -95,7 +95,7 @@ iloop: subi i,1
     brne iloop
     ret
 
-circle: ldi xzero,0b00100000
+circle: ldi xzero,0b00100000; -----------------------------------------------------------------
 ldi xone,0b00000001
 ldi ozero,0b00000000
 ldi oone,0b00000000
@@ -151,7 +151,7 @@ ldi oone,0b00000000
 rcall write
 rcall delay
 
-explosion: ldi xzero,0b00000000
+explosion: ldi xzero,0b00000000; -----------------------------------------------------------------
 ldi xone,0b00000000
 ldi ozero,0b00010000
 ldi oone,0b00000000
@@ -207,8 +207,403 @@ ldi oone,0b00000000
 rcall write
 rcall delay
 
+ret
+
+xo: ldi xzero,0b01010101; -----------------------------------------------------------------
+ldi xone,0b00000001
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11101111
+ldi oone,0b00000001
+rcall write
+rcall delay
+ret
+
+right: ldi xzero,0b10000000; -----------------------------------------------------------------
+ldi xone,0b00000000
+ldi ozero,0b10000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01010000
+ldi xone,0b00000001
+ldi ozero,0b01010000
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00101010
+ldi xone,0b00000000
+ldi ozero,0b00101010
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000101
+ldi xone,0b00000000
+ldi ozero,0b00000101
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ret
+
+xfall: ldi xzero,0b00000000; -----------------------------------------------------------------
+ldi xone,0b00000001
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b10000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01000100
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01000010
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01000001
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01100001
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01010001
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01010001
+ldi xone,0b00000001
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b01010101
+ldi xone,0b00000001
+ldi ozero,0b00000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ret
+
+ocircle: ldi xzero,0b00000000; -----------------------------------------------------------------
+ldi xone,0b00000000
+ldi ozero,0b01000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b10000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000000
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00100000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000100
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000010
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00000001
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b00001000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11000000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01000000
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01100000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01000100
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01000010
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01000001
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11001000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001000
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01101000
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001100
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001010
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001001
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11001001
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001001
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01101001
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001101
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001011
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11001011
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001011
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01101011
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001111
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11001111
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01001111
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01101111
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11101111
+ldi oone,0b00000000
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b01101111
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ldi xzero,0b00000000
+ldi xone,0b00000000
+ldi ozero,0b11101111
+ldi oone,0b00000001
+rcall write
+rcall delay
+
+ret
+
+delayLong: rcall delay
+rcall delay
+rcall delay
+rcall delay
+rcall delay
+rcall delay
+ret
+
 main:
     ; rcall circle
-    rcall explosion
+    ; rcall explosion
+    ; rcall xo
+    ; rcall right
+    rcall delayLong
+    rcall xfall
+    rcall delayLong
+    rcall ocircle
+    rcall delayLong
+    ; rcall ocircle
     rjmp main
-

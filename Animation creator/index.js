@@ -34,10 +34,40 @@ const reduceState = () => {
     return ret;
 }
 
-// Set the save button behavior
-const saveBtn = document.getElementById('save');
-saveBtn.addEventListener('click', () => {
+const save = () => {
     const seqParent = document.getElementById('sequence');
     const seq = reduceState();
     seqParent.appendChild(seq);
+};
+
+// clears the board but keeps the assembly
+const clear = () => {
+    teams.forEach((t) => {
+        for (let i = 0; i <= 8; i++) {
+            const id = t + i;
+            const elem = document.getElementById(id);
+            elem.setAttribute('selected', 0);
+            state[t][i] = 0;
+        }
+    })
+};
+
+// copies the assembly to the clipboard
+const copy = () => {
+    const seqParent = document.getElementById('sequence');
+    navigator.clipboard.writeText(seqParent.innerText + "\n\nret");
+};
+
+// Set the save button behavior
+const saveBtn = document.getElementById('save');
+saveBtn.addEventListener('click', save)
+window.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') save();
 })
+
+// Set the clear button behavior
+const clearBtn = document.getElementById('clear');
+clearBtn.addEventListener('click', clear);
+// set the copy button behavior
+const copyBtn = document.getElementById('copy');
+copyBtn.addEventListener('click', copy)

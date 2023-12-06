@@ -2,6 +2,11 @@
     display: flex;
     gap: 0rem;
 }
+#buttons {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem;
+}
 .container {
     flex-direction: column;
     display: flex;
