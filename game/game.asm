@@ -8,54 +8,64 @@
 ; PA3: Buttons A2
 ; PCINT7: interupt for the first 8 buttons
 
-	.include "tn84def.inc"       ; pretty sure this is the right thing
+	.include "tn84def.inc"
 
-	.cseg                         ; Not sure what this does
+	.cseg
 	.org 	0x00
 
-    rjmp setup ; External pin, power-on reset, brown-out reset, watchdog reset
-    reti ; INT0 ; External interrupt request 0
-    rjmp btnpush ; PCINT0 ; Pin change interrupt request 0
-    rjmp btnpush ; PCINT1 ; Pin change interrupt request 1
-    reti ; WDT ; Watchdog time-out
-    reti ; TIMER1 ; CAPT Timer/Counter1 capture event
-    reti ; TIMER1 ; COMPA Timer/Counter1 compare match A
-    reti ; TIMER1 ; COMPB Timer/Counter1 compare match B
-    reti ; TIMER1 ; OVF Timer/Counter0 overflow
-    reti ; TIMER0 ; COMPA Timer/Counter0 compare match A
-    reti ; TIMER0 ; COMPB Timer/Counter0 compare match B
-    reti ; TIMER0 ; OVF Timer/Counter0 overflow
-    reti ; ANA_COMP ; Analog comparator
-    reti ; ADC ; ADC conversion complete
-    reti ; EE_RDY ; EEPROM ready
-    reti ; USI_START ; USI START
-    reti ; USI_OVF ; USI overflow
+    rjmp setup; External pin, power-on reset, brown-out reset, watchdog reset
+    reti; INT0 ; External interrupt request 0
+    rjmp btnpush; PCINT0 ; Pin change interrupt request 0
+    rjmp btnpush; PCINT1 ; Pin change interrupt request 1
+    reti; WDT ; Watchdog time-out
+    reti; TIMER1 ; CAPT Timer/Counter1 capture event
+    reti; TIMER1 ; COMPA Timer/Counter1 compare match A
+    reti; TIMER1 ; COMPB Timer/Counter1 compare match B
+    reti; TIMER1 ; OVF Timer/Counter0 overflow
+    reti; TIMER0 ; COMPA Timer/Counter0 compare match A
+    reti; TIMER0 ; COMPB Timer/Counter0 compare match B
+    reti; TIMER0 ; OVF Timer/Counter0 overflow
+    reti; ANA_COMP ; Analog comparator
+    reti; ADC ; ADC conversion complete
+    reti; EE_RDY ; EEPROM ready
+    reti; USI_START ; USI START
+    reti; USI_OVF ; USI overflow
 
-    
-    .def output      = r23
-    .def clkHigh     = r0
-    .def dataHigh    = r1
-    .def clrHigh     = r2
+    ; low registers
+    .def clkHigh = r0
+    .def dataHigh = r1
+    .def clrHigh = r2
 
     .def copy = r3
     .def copy1 = r4
 
-    .def turn = r5
-
     .def zero = r6; seems redundant, but is needed at some point
 
+    ; game state -----------
+    .def turn = r5
+
+    .def x0 = r7; x's 8-0
+    .def x1 = r8; x's 15-9
+    .def o0 = r9; o's 8-0
+    .def o1 = r10; o's 15-9
+    ; ---------------------
+
+    ; high registers
     .def working = r16
 
-    .def i = r17
+    .def i = r17; used for delays
     .def n = r18
 
-    .def x0     = r19         ; x's 8-0
-    .def x1      = r20         ; x's 15-9
-    .def o0     = r21         ; o's 8-0
-    .def o1      = r22         ; o's 15-9
-    .def lastPush  = r23         ; last button that was pushed
+    .def red0 = r19; used for animations
+    .def red1 = r20
+    .def green0 = r21
+    .def green1 = r22
 
-delay: ldi i,255 ; delay for long enough to avoid button bounce
+    .def output = r23
+    .def lastPush = r24; last button that was pushed
+
+; This could all be nicer, BUT it works right now and I have other finals to do
+delayBounce: ldi i,255; delay for long enough to avoid button bounce
     ldi n,200
 iloop: subi i,1
     brne iloop
@@ -64,8 +74,24 @@ iloop: subi i,1
     brne iloop
     ret
 
-delayMed: rcall delay
-    rcall delay
+delay75: ldi i,255
+    ldi n,75
+    rjmp iloop
+
+delay125:ldi i,255
+    ldi n,125
+    rjmp iloop
+
+delay500:
+    rcall delay125; *ellegant*
+    rcall delay125
+    rcall delay125
+    rcall delay125
+    ret
+
+delay1000:
+    rcall delay500
+    rcall delay500
     ret
 
 tick: or output,clkHigh; tick the shift register clock
@@ -74,7 +100,7 @@ tick: or output,clkHigh; tick the shift register clock
     out PORTB,output
     ret
 
-enInterupts: ; enable interupts PCINT0 and PCINT7
+enInterupts:; enable interupts PCINT0 and PCINT7
     ; These are used to signal that a button has been pushed
     ldi working,(1<<PINA0)|(1<<PINA7); enable PCINT0 and PCINT7
     out PCMSK0,working
@@ -84,11 +110,19 @@ enInterupts: ; enable interupts PCINT0 and PCINT7
     sei ; set the global interupt enable pin
     ret
 
-clear: ; clear lights but not the state
+clearLights:; clear lights but not the state
     ldi output,0                   ; start everything at zero
     out PORTB,output
-    mov output,clrHigh ; set clr high
+    mov output,clrHigh; set clr high
     out PORTB,output
+    ret
+
+clearState:; clear state
+    ldi working,0
+    mov o0,working
+    mov o1,working
+    mov x0,working
+    mov x1,working
     ret
 
 lShift: ldi i,PINB1; shifts the working register by PINB1. Used in 'write'
@@ -97,7 +131,7 @@ lShift: ldi i,PINB1; shifts the working register by PINB1. Used in 'write'
     brne lShift
     ret
 
-write: rcall clear; --- writes the current board ---
+write: rcall clearLights; writes the current board
     mov copy,o0; write o's
     ldi n,8; 8 times
     rcall rwrite;
@@ -128,51 +162,52 @@ write: rcall clear; --- writes the current board ---
         brne rwrite; then do the whole thing over again
         ret
 
-setup:; RESET interupt points here
+writeRG: rcall clearLights; writes the red and green registers
+    mov copy,green0; write o's
+    ldi n,8; 8 times
+    rcall rwrite;
+    mov copy,green1;
+    ldi n,1; 1 time
+    rcall rwrite;
+    mov copy,red0; write x's
+    ldi n,8
+    rcall rwrite;
+    mov copy,red1;
+    ldi n,1
+    rcall rwrite;
+    ret
+    
+
+setup:; setup for the everything; RESET interupt points here
     ldi	working,(1<<DDB1)|(1<<DDB0)|(1<<DDB2); Set port B0 B1 B2 to output
     out DDRB,working
     nop; noop for synchronization
 
-    ldi working,(1<<PINB0); used to turn clock on
-    mov clkHigh,working
+    ldi working,(1<<PINB0)
+    mov clkHigh,working; used to turn clock on
     ldi working,(1<<PINB1)
     mov dataHigh,working; used to toggle the data
     ldi working,(1<<PINB2)
     mov clrHigh,working; used to toggle the clr
 
-    ldi o0,0; clear state
-    ldi o1,0
-    ldi x0,0
-    ldi x1,0
+    rcall clearLights
+    rcall clearState
 
-    rcall clear; clear lights
+    rcall enInterupts; enable interrupts
 
-    ; set green ready light ------------
-    or output,dataHigh ; set data high
-    out PORTB,output
-    rcall tick
-    eor output,dataHigh ; set data low
-    out PORTB,output
+    rcall animate; animate before the game starts
+    reti; unreachable reti
 
-    rcall enInterupts
-    rcall main
-    reti
-
-main:
-    rcall checkForWin
-    rcall checkForTie
-    rjmp main
-    ret; unreachable return
-
-btnpush: cli; handler for the button interrupt; disable interrupts
+btnpush:; handler for the button interrupt
+    cli; disable interrupts
     in copy,PINA; read the input
     
     mov working,copy
     andi working,(1<<PINA0)|(1<<PINA7); isolate the interrupt pins
-    cpi working,(0<<PINA0)|(1<<PINA7)
+    cpi working,(0<<PINA0)|(1<<PINA7); test for case where no button is pressed
     breq btnFinally; immediately return if no button is pushed. Prevents btnpush from firing when we release a button
-    ; mov o0,working
 
+    ; save inputs to lastPush
     mov lastPush,copy
     andi lastPush,(1<<PINA1)|(1<<PINA2)|(1<<PINA3); mask for the inputs we want
     lsr lastPush
@@ -185,10 +220,14 @@ btnpush: cli; handler for the button interrupt; disable interrupts
 
     rcall updateState
 
-    rcall delay
+    rcall delayBounce; delay to avoid button bounce
     
     btnFinally: sei; re-enable interrupts
-        reti
+        rcall checkForWin
+        rcall checkForTie
+    
+    gameLoop: rjmp gameLoop; then wait in an infinite loop for the next button to be pressed
+    reti
 
 updateState:; updates the state to include whatever lastPush was
     ldi working,1
@@ -244,122 +283,64 @@ updateState:; updates the state to include whatever lastPush was
 checkForWin:; brute forcing this
     cli; disable interrupts
 
-    cpi x1,1
-    breq checkForX1
-    rjmp checkForX0
+    mov copy,x0
+    ldi working,1
+    cp x1,working
+    breq check1
+    rcall checkFor0
 
-    ; TODO: make this simpler
+    mov copy,o0
+    ldi working,1
+    cp o1,working
+    breq check1
+    rcall checkFor0
 
-    checkForX1:
-        ldi working,0b00010001
-        and working,x0
-        cpi working,0b00010001
-        breq xWon
-        ldi working,0b11000000
-        and working,x0
-        cpi working,0b11000000
-        breq xWon
-        ldi working,0b00100100
-        and working,x0
-        cpi working,0b00100100
-        breq xWon
-
-        rjmp checkO
-
-    checkForX0:
-        ldi working,0b10010010
-        and working,x0
-        cpi working,0b10010010
-        breq xWon
-        ldi working,0b01001001
-        and working,x0
-        cpi working,0b01001001
-        breq xWon
-        ldi working,0b01010100
-        and working,x0
-        cpi working,0b01010100
-        breq xWon
-        ldi working,0b00111000
-        and working,x0
-        cpi working,0b00111000
-        breq xWon
-        ldi working,0b00000111
-        and working,x0
-        cpi working,0b00000111
-        breq xWon
-
-    rjmp checkO
-
-    xWon:; infinite win loop
-    ldi o0,0
-    ldi o1,0
-    xLoop: ldi x0,255
-        ldi x1,1
-        rcall write
-        rcall delayMed
-        ldi x0,0
-        ldi x1,0
-        rcall write
-        rcall delayMed
-        rjmp xLoop
-
-    checkO:
-    cpi o1,1
-    breq checkForO1
-    rjmp checkForO0
-
-    checkForO1:
-        ldi working,0b00010001
-        and working,o0
-        cpi working,0b00010001
-        breq oWon
-        ldi working,0b11000000
-        and working,o0
-        cpi working,0b11000000
-        breq oWon
-        ldi working,0b00100100
-        and working,o0
-        cpi working,0b00100100
-        breq oWon
-
-        rjmp endCheck
-
-    checkForO0:
-        ldi working,0b10010010
-        and working,o0
-        cpi working,0b10010010
-        breq oWon
-        ldi working,0b01001001
-        and working,o0
-        cpi working,0b01001001
-        breq oWon
-        ldi working,0b01010100
-        and working,o0
-        cpi working,0b01010100
-        breq oWon
-        ldi working,0b00111000
-        and working,o0
-        cpi working,0b00111000
-        breq oWon
-        ldi working,0b00000111
-        and working,o0
-        cpi working,0b00000111
-        breq oWon
-    
     rjmp endCheck
 
-    oWon:; infinite win loop
-        ldi x0,0
-        ldi x1,0
-        oLoop: ldi o0,255
-            ldi o1,1
-            rcall write
-            rcall delayMed
-            ldi o0,0
-            ldi o1,0
-            rcall write
-            rcall delayMed
-            rjmp oLoop
+    check1: rcall checkFor1
+
+    checkFor1:
+        ldi working,0b00010001
+        and working,copy
+        cpi working,0b00010001
+        breq winner
+        ldi working,0b11000000
+        and working,copy
+        cpi working,0b11000000
+        breq winner
+        ldi working,0b00100100
+        and working,copy
+        cpi working,0b00100100
+        breq winner
+        ret
+
+    checkFor0:
+        ldi working,0b10010010
+        and working,copy
+        cpi working,0b10010010
+        breq winner
+        ldi working,0b01001001
+        and working,copy
+        cpi working,0b01001001
+        breq winner
+        ldi working,0b01010100
+        and working,copy
+        cpi working,0b01010100
+        breq winner
+        ldi working,0b00111000
+        and working,copy
+        cpi working,0b00111000
+        breq winner
+        ldi working,0b00000111
+        and working,copy
+        cpi working,0b00000111
+        breq winner
+        ret
+
+    winner:
+        sbrc turn,0
+        rcall oWon
+        rcall xWon
 
     endCheck:
         sei; re-enable interrupts
@@ -387,7 +368,7 @@ checkForTie:
     sei; re-enable interrupts
     ret
     count:; count the 1's in copy
-        clc; cleary the carry flag
+        clc; clear the carry flag
         ror copy
         adc working,zero
         cp copy,zero
@@ -395,16 +376,280 @@ checkForTie:
         ret
 
 tie:; infinite tie loop
-    ldi o0,0
-    ldi o1,0
-    ldi x0,0
-    ldi x1,0
+    ldi working,255
+    mov x0,working
+    mov o0,working
+    ldi working,1
+    mov x1,working
+    mov o1,working
     rcall write
-    rcall delayMed
-    ldi x0,255
-    ldi x1,1
-    ldi o0,255
-    ldi o1,1
-    rcall write
-    rcall delayMed
-    rjmp tie
+    tLoop: rjmp tLoop
+
+xWon:; infinite win loop
+    ldi working,0
+    mov o0,working
+    mov o1,working
+    xLoop:
+        ldi working,255
+        mov x0,working
+        ldi working,1
+        mov x1,working
+        rcall write
+        rcall delay500
+        ldi working,0
+        mov x0,working
+        mov x1,working
+        rcall write
+        rcall delay500
+        rjmp xLoop
+
+oWon:; infinite win loop
+    ldi working,0
+    mov x0,working
+    mov x1,working
+    oLoop:
+        ldi working,255
+        mov o0,working
+        ldi working,1
+        mov o1,working
+        rcall write
+        rcall delay500
+        ldi working,0
+        mov o0,working
+        mov o1,working
+        rcall write
+        rcall delay500
+        rjmp oLoop
+
+animate: 
+    rcall ocircle
+    rcall delay1000
+    rcall xfall
+    rcall delay1000
+
+    rcall ocircle
+    rcall delay1000
+    rcall xfall
+    rcall delay1000
+
+ 
+    rjmp animate
+
+; --------------------- All that lies below are frames of animation ---------------------------
+
+ocircle: ldi red0,0b00000000; -----------------------------------------------------------------
+ldi red1,0b00000000
+ldi green0,0b01000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b10000000
+ldi green1,0b00000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b00000000
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b00100000
+ldi green1,0b00000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b00000100
+rcall writeRG
+rcall delay75
+
+ldi green0,0b00000010
+rcall writeRG
+rcall delay75
+
+ldi green0,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b00001000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b11000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01000000
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01100000
+ldi green1,0b00000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01000100
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01000010
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b11001000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001000
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01101000
+ldi green1,0b00000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001100
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001010
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b11001001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001001
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01101001
+ldi green1,0b00000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001101
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001011
+rcall writeRG
+rcall delay75
+
+ldi green0,0b11001011
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001011
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01101011
+ldi green1,0b00000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001111
+rcall writeRG
+rcall delay75
+
+ldi green0,0b11001111
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01001111
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01101111
+ldi green1,0b00000000
+rcall writeRG
+rcall delay75
+
+ldi green0,0b11101111
+rcall writeRG
+rcall delay75
+
+ldi green0,0b01101111
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ldi green0,0b11101111
+ldi green1,0b00000001
+rcall writeRG
+rcall delay75
+
+ret
+
+xfall: ldi red0,0b00000000; -----------------------------------------------------------------
+ldi red1,0b00000001
+ldi green0,0b00000000
+ldi green1,0b00000000
+rcall writeRG
+rcall delay125
+
+ldi red0,0b10000000
+ldi red1,0b00000000
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01000000
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01000100
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01000010
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01000001
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01100001
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01010001
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01010001
+ldi red1,0b00000001
+ldi green0,0b00000000
+rcall writeRG
+rcall delay125
+
+ldi red0,0b01010101
+ldi red1,0b00000001
+ldi green0,0b00000000
+rcall writeRG
+rcall delay125
+
+ret

@@ -28,9 +28,9 @@ const reduceState = () => {
         ret.append(`ldi ${t}1,0b0000000${state[t][8]}`);
         ret.append(document.createElement('br'));
     })
-    ret.append('rcall write');
+    ret.append('rcall writeRG');
     ret.append(document.createElement('br'));
-    ret.append('rcall delay');
+    ret.append('rcall delay75');
     return ret;
 }
 
