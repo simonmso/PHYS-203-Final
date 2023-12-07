@@ -286,18 +286,19 @@ checkForWin:; brute forcing this
     mov copy,x0
     ldi working,1
     cp x1,working
-    breq check1
-    rcall checkFor0
+    brne checkX0
+    rcall checkFor1
+    checkX0: rcall checkFor0
 
     mov copy,o0
     ldi working,1
     cp o1,working
-    breq check1
-    rcall checkFor0
+    brne checkO0
+    rcall checkFor1
+    checkO0: rcall checkFor0
 
     rjmp endCheck
 
-    check1: rcall checkFor1
 
     checkFor1:
         ldi working,0b00010001
